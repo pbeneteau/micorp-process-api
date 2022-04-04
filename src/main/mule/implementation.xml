@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="createCustomerOrder" doc:id="4f5fd235-035c-413c-9289-d3e88d878e9c" >
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="800f8a90-c845-4605-afda-6a7db2c95b79" />
+		<logger level="INFO" doc:name="Logger" doc:id="3171ed35-4cd2-4012-ad20-94d1a50bbb63" message="#[payload]" />
+		<set-variable value="#[randomInt(10000000)]" doc:name="PONumber" doc:id="d6d7cfb7-196c-4820-9934-b7ad3dae22ed" variableName="PONumber" />
+		<logger level="INFO" doc:name="Logger" doc:id="81102468-4f45-4d96-99a9-62956a37f469" message="#['Generated PONumber: ' ++ vars.PONumber as String]" />
+		<flow-ref doc:name="getCustomer" doc:id="84a7b90b-f8f7-4fb2-84e4-9790330dd96e" name="getCustomer"/>
+		<flow-ref doc:name="createOrder" doc:id="7a050d64-9139-4ed8-a714-78c3b727d274" name="createOrder"/>
+		<flow-ref doc:name="createItems" doc:id="3640a125-1acb-44a6-98dc-6d6258c426e2" name="createItems"/>
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	"customerID": vars.customerId,&#10;	"orderID": vars.orderId,&#10;	"itemsID": vars.itemsId&#10;}]' doc:name="Set Payload" doc:id="ef5a2577-de71-4c9e-8fb0-927bd6da7f33" />
+	</sub-flow>
+	<sub-flow name="getCustomer" doc:id="6ffce4e1-0788-490b-b4d5-db4d92970e55" >
+		<logger level="INFO" doc:name="Logger" doc:id="eb7e1c56-7b2e-4b9d-b60c-1516e0826094" message="Getting customer..."/>
+		<http:request method="GET" doc:name="Get customer" doc:id="af3688fb-bc9c-480b-84ec-e64214af6f14" config-ref="HTTP_Request_configuration_system_api" path="/customers" target="customerId" targetValue="#[payload[0].Id]">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"email" : payload.customer.email
+}]]]></http:query-params>
+		</http:request>
+		<choice doc:name="customerExists" doc:id="aad206c2-5d62-467e-aeab-2361b1fd006e" >
+			<when expression="#[vars.customerId is Null]" >
+				<logger level="INFO" doc:name="Logger" doc:id="d6ad838f-9c10-4d80-8ce3-52935bfd1fca" message="Creating customer..." />
+				<flow-ref doc:name="createCustomer" doc:id="0836ec5b-c427-4885-9d43-d46dedf99207" name="createCustomer"/>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="39b0b51a-d14a-4101-9acc-66dcf6c6402f" message='#["Customer exists with id: ": vars.customerId as String]'/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="createCustomer" doc:id="115d9cce-abee-45ce-b9c9-c558c0070cc3" >
+		<http:request method="POST" doc:name="POST customer" doc:id="2ba3cb95-d65d-4c48-85e5-855dc0d22a49" config-ref="HTTP_Request_configuration_system_api" path="/customers" target="customerId" targetValue="#[payload.customerId]">
+			<http:body ><![CDATA[#[payload.customer]]]></http:body>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="289f5151-e422-4ca0-af2b-7da6d67d201e" message='#["Created customer with id: " ++ vars.customerId as String]'/>
+	</sub-flow>
+	<sub-flow name="createOrder" doc:id="d4cb1ccf-be51-4554-8b3e-95932903b9ff" >
+		<logger level="INFO" doc:name="Logger" doc:id="4b4caf6a-cf20-4aa3-aec3-da0702020149" message="Creatinf order..." />
+		<logger level="INFO" doc:name="Logger" doc:id="71a1fe47-b4c5-47de-97f2-9902680474e2" message="#[payload]"/>
+		<http:request method="POST" doc:name="POST order" doc:id="42dc1e15-1966-4d34-91a0-a20ff7041fb6" config-ref="HTTP_Request_configuration_system_api" path="/orders" target="orderId" targetValue="#[payload.orderId]">
+			<http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+payload.order ++  {"poNumber" : vars.PONumber, "customerId": vars.customerId}]]]></http:body>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="210efce8-3142-4277-9754-f98c53f95003" message='#["Created order with id: " ++ vars.orderId]'/>
+	</sub-flow>
+	<sub-flow name="createItems" doc:id="eee08626-ad00-4575-84f8-f07d758924d5" >
+		<logger level="INFO" doc:name="logger" doc:id="d3e02784-2f67-4b7e-8c63-e0bf9dfc9ec7" message="Creating items..." />
+		<set-variable value="#[[]]" doc:name="itemsId" doc:id="a92db6cf-9e7b-442c-bfb1-82df20277cb7" variableName="itemsId"/>
+		<foreach doc:name="For Each" doc:id="922e84b5-5a62-4d82-b075-593968634915" collection="#[%dw 2.0&#10;output application/json&#10;---&#10;&#10;payload.items as Array]">
+			<http:request method="POST" doc:name="POST item" doc:id="34a33e1d-dd09-4ece-8b9a-9de65b8cc754" config-ref="HTTP_Request_configuration_system_api" path="/items" responseTimeout="17676272" target="itemId" targetValue='#[payload.itemId as String default ""]'>
+				<http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+payload ++  {"orderId": vars.orderId}]]]></http:body>
+			</http:request>
+			<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;vars.itemsId &lt;&lt; vars.itemId]" doc:name="itemsId" doc:id="8519fedd-ec81-4f91-be0f-5f20ec2552aa" variableName="itemsId"/>
+		</foreach>
+	</sub-flow>
+</mule>

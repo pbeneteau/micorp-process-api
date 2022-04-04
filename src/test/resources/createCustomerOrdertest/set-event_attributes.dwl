@@ -1,0 +1,30 @@
+{
+  "headers": {
+    "client_id": "7447ae6ebca64cd1b3011ed47e3293ee",
+    "client_secret": "C99341cAfE8045A7900018c34344517e",
+    "content-type": "application/json",
+    "user-agent": "PostmanRuntime/7.29.0",
+    "accept": "*/*",
+    "postman-token": "b8621447-c7ea-43d3-8732-e7732a249e50",
+    "host": "0.0.0.0:8082",
+    "accept-encoding": "gzip, deflate, br",
+    "connection": "keep-alive",
+    "content-length": "574"
+  },
+  "clientCertificate": null,
+  "method": "POST",
+  "scheme": "http",
+  "queryParams": {},
+  "requestUri": "/api/v1/orders",
+  "queryString": "",
+  "version": "HTTP/1.1",
+  "maskedRequestPath": "/orders",
+  "listenerPath": "/api/v1/*",
+  "localAddress": "/127.0.0.1:8082",
+  "relativePath": "/api/v1/orders",
+  "uriParams": {},
+  "rawRequestUri": "/api/v1/orders",
+  "rawRequestPath": "/api/v1/orders",
+  "remoteAddress": "/127.0.0.1:51984",
+  "requestPath": "/api/v1/orders"
+}
